@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trò Chơi Trắc Nghiệm: Bản Quyền & Quyền Tác Giả</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Font Nunito -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Nunito', sans-serif;
+            user-select: none;
+        }
+        body {
+            overflow: hidden; /* Dạng 100vh không cuộn */
+        }
+        .btn-bounce {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .btn-bounce:hover {
+            transform: translateY(-2px);
+        }
+        .btn-bounce:active {
+            transform: translateY(2px);
+        }
+        @keyframes pulse-light {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+        .animate-pulse-slow {
+            animation: pulse-light 2.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-amber-100 via-sky-100 to-indigo-100 h-screen w-screen flex items-center justify-center p-3 md:p-6 overflow-hidden">
+
+    <!-- Container Chính (Khung vừa vặn màn hình) -->
+    <main class="w-full max-w-3xl bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border-4 border-white flex flex-col h-full max-h-[92vh] overflow-hidden relative">
+
+        <!-- MÀN HÌNH BẮT ĐẦU -->
+        <section id="start-screen" class="flex flex-col items-center justify-between p-6 h-full text-center">
+            <div class="mt-4">
+                <span class="inline-block bg-amber-200 text-amber-900 font-extrabold text-sm md:text-base px-4 py-1.5 rounded-full mb-3 shadow-sm">
+                    🎓 Tin Học Tiêu Học
+                </span>
+                <h1 class="text-2xl md:text-4xl font-black text-indigo-900 leading-tight">
+                    BẢN QUYỀN & QUYỀN TÁC GIẢ
+                </h1>
+                <p class="text-gray-600 font-bold text-base md:text-lg mt-2">
+                    Cùng học và kiểm tra kiến thức về an toàn thông tin nhé!
+                </p>
+            </div>
+
+            <!-- Hình ảnh minh họa trang chủ -->
+            <div class="my-auto w-48 h-48 md:w-64 md:h-64 relative flex items-center justify-center animate-pulse-slow">
+                <svg viewBox="0 0 200 200" class="w-full h-full drop-shadow-md">
+                    <circle cx="100" cy="100" r="90" fill="#E0F2FE"/>
+                    <path d="M60,140 Q100,170 140,140 Q150,90 100,60 Q50,90 60,140 Z" fill="#FDE047" stroke="#CA8A04" stroke-width="4"/>
+                    <!-- Khiên bảo vệ -->
+                    <path d="M100,40 L145,60 V105 C145,135 100,155 100,155 C100,155 55,135 55,105 V60 L100,40 Z" fill="#3B82F6" stroke="#1D4ED8" stroke-width="4"/>
+                    <path d="M100,50 L135,67 V105 C135,128 100,143 100,143 C100,143 65,128 65,105 V67 L100,50 Z" fill="#60A5FA"/>
+                    <!-- Tác giả / Bản quyền biểu tượng © -->
+                    <circle cx="100" cy="98" r="22" fill="#FFFFFF"/>
+                    <text x="100" y="107" font-size="26" font-weight="900" fill="#1D4ED8" text-anchor="middle">©</text>
+                </svg>
+            </div>
+
+            <div class="mb-4 w-full max-w-md">
+                <button id="start-btn" class="btn-bounce w-full bg-gradient-to-r from-emerald-400 to-green-500 hover:from-emerald-500 hover:to-green-600 text-white font-black text-xl md:text-2xl py-4 px-8 rounded-2xl shadow-lg shadow-green-500/30 border-b-4 border-green-700 active:border-b-0 transition-all">
+                    🚀 BẮT ĐẦU CHƠI
+                </button>
+            </div>
+        </section>
+
+        <!-- MÀN HÌNH CÂU HỎI -->
+        <section id="quiz-screen" class="hidden flex-col justify-between h-full p-4 md:p-6">
+            <!-- Thanh Tiến Trình & Tiêu Đề Top -->
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <span id="question-number" class="text-sm md:text-base font-extrabold text-indigo-700 bg-indigo-100 px-3 py-1 rounded-full">
+                        Câu hỏi 1 / 5
+                    </span>
+                    <span id="score-live" class="text-sm md:text-base font-extrabold text-amber-600 bg-amber-100 px-3 py-1 rounded-full">
+                        ⭐ Điểm: 0
+                    </span>
+                </div>
+                <!-- Progress Bar -->
+                <div class="w-full bg-gray-200 rounded-full h-3 md:h-4 overflow-hidden p-0.5 border border-gray-100">
+                    <div id="progress-bar" class="bg-gradient-to-r from-amber-400 to-indigo-500 h-full rounded-full transition-all duration-500" style="width: 20%;"></div>
+                </div>
+            </div>
+
+            <!-- Khu Vực Hình Ảnh Minh Họa & Nội Dung Câu Hỏi -->
+            <div class="flex flex-col items-center text-center my-auto px-2">
+                <!-- Frame chứa SVG minh họa -->
+                <div id="illustration-container" class="w-28 h-28 md:w-36 md:h-36 mb-3 flex items-center justify-center p-2 bg-sky-50 rounded-2xl border-2 border-sky-200 shadow-sm">
+                    <!-- SVG được render động bằng JS -->
+                </div>
+
+                <!-- Văn bản câu hỏi -->
+                <h2 id="question-text" class="text-lg md:text-2xl font-black text-gray-800 leading-snug max-w-2xl">
+                    Nội dung câu hỏi sẽ hiển thị ở đây?
+                </h2>
+            </div>
+
+            <!-- Các Lựa Chọn Đáp Án (Grid responsive) -->
+            <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-3.5 mb-2">
+                <!-- Nút đáp án sẽ được cập nhật động bằng JS -->
+            </div>
+        </section>
+
+        <!-- MÀN HÌNH KẾT QUẢ -->
+        <section id="result-screen" class="hidden flex-col items-center justify-between p-6 h-full text-center">
+            <div class="mt-2">
+                <h2 class="text-3xl md:text-4xl font-black text-indigo-900">KẾT QUẢ THỬ THÁCH</h2>
+                <p class="text-gray-500 font-bold text-sm md:text-base mt-1">Em đã hoàn thành xuất sắc tất cả câu hỏi!</p>
+            </div>
+
+            <!-- Khung Điểm Số Sinh Động -->
+            <div class="my-auto bg-gradient-to-b from-indigo-50 to-amber-50 p-6 md:p-8 rounded-3xl border-4 border-indigo-200 shadow-inner w-full max-w-md flex flex-col items-center">
+                <div id="result-badge" class="text-5xl md:text-6xl mb-2 animate-bounce">🏆</div>
+                <h3 id="result-feedback" class="text-2xl md:text-3xl font-black text-emerald-600 mb-2">XUẤT SẮC!</h3>
+                <p class="text-gray-700 text-base md:text-lg font-bold">
+                    Số câu đúng: <span id="correct-count" class="text-2xl font-black text-indigo-600">5</span> / 5
+                </p>
+                <div class="mt-4 bg-white px-6 py-2 rounded-2xl shadow border border-indigo-100">
+                    <span class="text-gray-500 font-bold text-sm">Tổng số điểm: </span>
+                    <span id="final-score" class="text-2xl font-black text-amber-500">100 điểm</span>
+                </div>
+            </div>
+
+            <!-- Nút Chơi Lại -->
+            <div class="mb-4 w-full max-w-md">
+                <button id="restart-btn" class="btn-bounce w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-black text-xl md:text-2xl py-4 px-8 rounded-2xl shadow-lg shadow-indigo-500/30 border-b-4 border-indigo-800 active:border-b-0 transition-all">
+                    🔄 CHƠI LẠI NGAY
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- KỊCH BẢN JAVASCRIPT -->
+    <script>
+        // -------------------------------------------------------------
+        // 1. DỮ LIỆU CÂU HỎI & ĐÁP ÁN (Hình ảnh minh họa bằng SVG inline)
+        // -------------------------------------------------------------
+        const questions = [
+            {
+                id: 1,
+                question: "Bản quyền nội dung thông tin là gì?",
+                options: [
+                    "Quyền sao chép bất cứ nội dung nào.",
+                    "Quyền của tác giả cho phép hoặc không cho phép người khác sử dụng nội dung.",
+                    "Quyền tải nội dung từ internet.",
+                    "Quyền chia sẻ nội dung trên mạng xã hội."
+                ],
+                correct: 1, // Chỉ số b (0-based: 1)
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                        <rect x="20" y="15" width="60" height="70" rx="8" fill="#FFFFFF" stroke="#3B82F6" stroke-width="4"/>
+                        <line x1="32" y1="30" x2="68" y2="30" stroke="#93C5FD" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="32" y1="42" x2="60" y2="42" stroke="#93C5FD" stroke-width="4" stroke-linecap="round"/>
+                        <circle cx="65" cy="65" r="18" fill="#FBBF24" stroke="#D97706" stroke-width="3"/>
+                        <text x="65" y="72" font-size="20" font-weight="900" fill="#78350F" text-anchor="middle">©</text>
+                      </svg>`
+            },
+            {
+                id: 2,
+                question: "Tại sao cần phải bảo vệ bản quyền nội dung thông tin?",
+                options: [
+                    "Để tránh bị phạt.",
+                    "Để tôn trọng quyền của tác giả.",
+                    "Để có thêm nhiều nội dung miễn phí.",
+                    "Để bảo vệ người sử dụng."
+                ],
+                correct: 1, // Chỉ số b
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                        <path d="M50 15 L85 30 V55 C85 75 50 88 50 88 C50 88 15 75 15 55 V30 Z" fill="#10B981" stroke="#047857" stroke-width="4"/>
+                        <path d="M40 50 L48 58 L62 42" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>`
+            },
+            {
+                id: 3,
+                question: "Việc truy cập nội dung mà không ghi nguồn gốc có đúng không?",
+                options: [
+                    "Đúng",
+                    "Sai"
+                ],
+                correct: 1, // Chỉ số b (Sai)
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                        <circle cx="50" cy="50" r="38" fill="#FEE2E2" stroke="#EF4444" stroke-width="4"/>
+                        <path d="M35 35 L65 65 M65 35 L35 65" stroke="#DC2626" stroke-width="8" stroke-linecap="round"/>
+                      </svg>`
+            },
+            {
+                id: 4,
+                question: "Quyền tác giả là gì?",
+                options: [
+                    "Quyền chỉnh sửa nội dung của người khác.",
+                    "Quyền sử dụng nội dung mà không cần xin phép.",
+                    "Quyền được công nhận là tác giả của nội dung.",
+                    "Quyền xóa nội dung của người khác."
+                ],
+                correct: 2, // Chỉ số c
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                        <path d="M50 20 L60 38 L80 42 L65 56 L68 76 L50 67 L32 76 L35 56 L20 42 L40 38 Z" fill="#F59E0B" stroke="#B45309" stroke-width="3"/>
+                        <circle cx="50" cy="46" r="8" fill="#FFF"/>
+                      </svg>`
+            },
+            {
+                id: 5,
+                question: "Việc sao chép tệp của bạn mà không được sự đồng ý có hợp lệ không?",
+                options: [
+                    "Có",
+                    "Không"
+                ],
+                correct: 1, // Chỉ số b (Không)
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                        <rect x="20" y="30" width="40" height="50" rx="5" fill="#E0F2FE" stroke="#0284C7" stroke-width="3"/>
+                        <rect x="40" y="20" width="40" height="50" rx="5" fill="#BAE6FD" stroke="#0284C7" stroke-width="3"/>
+                        <circle cx="60" cy="45" r="14" fill="#EF4444"/>
+                        <line x1="52" y1="45" x2="68" y2="45" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+                      </svg>`
+            }
+        ];
+
+        // -------------------------------------------------------------
+        // 2. PHÁT ÂM THANH BẰNG WEB AUDIO API (Tự tạo âm thanh không dùng MP3 ngoài)
+        // -------------------------------------------------------------
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            // Âm thanh khi chọn ĐÚNG: Tinh tinh vui nhộn
+            playCorrect() {
+                this.init();
+                const now = this.ctx.currentTime;
+
+                const osc1 = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc1.type = 'sine';
+                osc2.type = 'triangle';
+
+                // Nốt E5 -> A5
+                osc1.frequency.setValueAtTime(659.25, now);
+                osc1.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+
+                osc2.frequency.setValueAtTime(659.25, now);
+                osc2.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + 0.4);
+                osc2.stop(now + 0.4);
+            }
+
+            // Âm thanh khi chọn SAI: Buzz trầm nhẹ
+            playWrong() {
+                this.init();
+                const now = this.ctx.currentTime;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.25);
+
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+
+            // Âm thanh CHIẾN THẮNG khi hoàn thành bài
+            playVictory() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+
+                    gain.gain.setValueAtTime(0.3, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.3);
+                });
+            }
+        }
+
+        const sounds = new SoundEffects();
+
+        // -------------------------------------------------------------
+        // 3. QUẢN LÝ TRẠNG THÁI VÀ LOGIC TRÒ CHƠI
+        // -------------------------------------------------------------
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctAnswersCount = 0;
+        let canAnswer = true;
+
+        // Elements DOM
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+
+        const startBtn = document.getElementById('start-btn');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const questionNumberEl = document.getElementById('question-number');
+        const scoreLiveEl = document.getElementById('score-live');
+        const progressBar = document.getElementById('progress-bar');
+        const illustrationContainer = document.getElementById('illustration-container');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+
+        const resultFeedback = document.getElementById('result-feedback');
+        const resultBadge = document.getElementById('result-badge');
+        const correctCountEl = document.getElementById('correct-count');
+        const finalScoreEl = document.getElementById('final-score');
+
+        // Bắt đầu trò chơi
+        startBtn.addEventListener('click', () => {
+            sounds.init();
+            startScreen.classList.add('hidden');
+            startScreen.classList.remove('flex');
+            quizScreen.classList.remove('hidden');
+            quizScreen.classList.add('flex');
+            resetGame();
+            loadQuestion();
+        });
+
+        // Chơi lại
+        restartBtn.addEventListener('click', () => {
+            sounds.init();
+            resultScreen.classList.add('hidden');
+            resultScreen.classList.remove('flex');
+            quizScreen.classList.remove('hidden');
+            quizScreen.classList.add('flex');
+            resetGame();
+            loadQuestion();
+        });
+
+        function resetGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            correctAnswersCount = 0;
+            canAnswer = true;
+            scoreLiveEl.textContent = `⭐ Điểm: 0`;
+        }
+
+        // Tải nội dung câu hỏi hiện tại
+        function loadQuestion() {
+            canAnswer = true;
+            const q = questions[currentQuestionIndex];
+
+            // Cập nhật thông tin trên UI
+            questionNumberEl.textContent = `Câu hỏi ${currentQuestionIndex + 1} / ${questions.length}`;
+            const progressPercent = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+
+            illustrationContainer.innerHTML = q.svg;
+            questionText.textContent = q.question;
+
+            // Xóa và tạo mới các nút đáp án
+            optionsContainer.innerHTML = '';
+
+            const prefixes = ['a', 'b', 'c', 'd'];
+            q.options.forEach((optText, idx) => {
+                const button = document.createElement('button');
+                button.className = `btn-bounce w-full text-left p-3 md:p-4 rounded-2xl border-2 border-indigo-100 bg-white hover:bg-indigo-50 font-bold text-gray-800 text-sm md:text-base shadow-sm flex items-center transition-all cursor-pointer`;
+                
+                button.innerHTML = `
+                    <span class="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 font-extrabold flex items-center justify-center mr-3 shrink-0 text-sm md:text-base">
+                        ${prefixes[idx].toUpperCase()}
+                    </span>
+                    <span class="leading-snug">${optText}</span>
+                `;
+
+                button.addEventListener('click', () => handleSelectOption(idx, button));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        // Xử lý chọn đáp án
+        function handleSelectOption(selectedIndex, selectedBtn) {
+            if (!canAnswer) return;
+            canAnswer = false; // Khóa chọn đáp án tiếp
+
+            const q = questions[currentQuestionIndex];
+            const allButtons = optionsContainer.querySelectorAll('button');
+
+            if (selectedIndex === q.correct) {
+                // ĐÚNG
+                sounds.playCorrect();
+                selectedBtn.classList.remove('bg-white', 'border-indigo-100', 'hover:bg-indigo-50');
+                selectedBtn.classList.add('bg-emerald-500', 'text-white', 'border-emerald-600', 'shadow-md');
+                
+                // Đổi màu icon prefix
+                const prefixSpan = selectedBtn.querySelector('span');
+                prefixSpan.classList.remove('bg-indigo-100', 'text-indigo-700');
+                prefixSpan.classList.add('bg-emerald-600', 'text-white');
+
+                // Pháo hoa ăn mừng câu đúng
+                triggerMiniConfetti();
+
+                score += 20;
+                correctAnswersCount++;
+                scoreLiveEl.textContent = `⭐ Điểm: ${score}`;
+            } else {
+                // SAI
+                sounds.playWrong();
+                selectedBtn.classList.remove('bg-white', 'border-indigo-100', 'hover:bg-indigo-50');
+                selectedBtn.classList.add('bg-rose-500', 'text-white', 'border-rose-600');
+
+                const prefixSpan = selectedBtn.querySelector('span');
+                prefixSpan.classList.remove('bg-indigo-100', 'text-indigo-700');
+                prefixSpan.classList.add('bg-rose-600', 'text-white');
+
+                // Hiển thị đáp án đúng
+                const correctBtn = allButtons[q.correct];
+                correctBtn.classList.remove('bg-white', 'border-indigo-100');
+                correctBtn.classList.add('bg-emerald-100', 'text-emerald-900', 'border-emerald-400', 'font-black');
+            }
+
+            // Tự động chuyển câu hỏi sau 1.5s
+            setTimeout(() => {
+                currentQuestionIndex++;
+                if (currentQuestionIndex < questions.length) {
+                    loadQuestion();
+                } else {
+                    showResult();
+                }
+            }, 1500);
+        }
+
+        // Hiển thị màn hình kết quả
+        function showResult() {
+            quizScreen.classList.add('hidden');
+            quizScreen.classList.remove('flex');
+            resultScreen.classList.remove('hidden');
+            resultScreen.classList.add('flex');
+
+            correctCountEl.textContent = correctAnswersCount;
+            finalScoreEl.textContent = `${score} điểm`;
+
+            if (score === 100) {
+                resultFeedback.textContent = "XUẤT SẮC CỰC KỲ! 🌟";
+                resultFeedback.className = "text-2xl md:text-3xl font-black text-emerald-600 mb-2";
+                resultBadge.textContent = "🏆";
+                sounds.playVictory();
+                triggerFullConfetti();
+            } else if (score >= 60) {
+                resultFeedback.textContent = "LÀM TỐT LẮM! 👏";
+                resultFeedback.className = "text-2xl md:text-3xl font-black text-indigo-600 mb-2";
+                resultBadge.textContent = "🥇";
+                sounds.playVictory();
+            } else {
+                resultFeedback.textContent = "CỐ GẮNG HƠN NÀO! 💪";
+                resultFeedback.className = "text-2xl md:text-3xl font-black text-amber-600 mb-2";
+                resultBadge.textContent = "📚";
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 4. HIỆU ỨNG PHÁO HOA (CONFETTI)
+        // -------------------------------------------------------------
+        function triggerMiniConfetti() {
+            confetti({
+                particleCount: 30,
+                spread: 60,
+                origin: { y: 0.8 },
+                colors: ['#10B981', '#F59E0B', '#3B82F6']
+            });
+        }
+
+        function triggerFullConfetti() {
+            const duration = 2.5 * 1000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+    </script>
+</body>
+</html>
